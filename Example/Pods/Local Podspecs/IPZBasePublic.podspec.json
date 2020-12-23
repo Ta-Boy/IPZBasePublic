@@ -1,0 +1,159 @@
+{
+  "name": "IPZBasePublic",
+  "version": "0.1.0",
+  "summary": "伊品众通用组件库",
+  "description": "TODO: Add long description of the pod here.",
+  "homepage": "https://github.com/Ta-Boy/IPZBasePublic",
+  "license": {
+    "type": "MIT",
+    "file": "LICENSE"
+  },
+  "authors": {
+    "tangmingit@163.com": "tangming@ipzoe.com"
+  },
+  "source": {
+    "git": "https://github.com/Ta-Boy/IPZBasePublic.git",
+    "tag": "0.1.0"
+  },
+  "swift_versions": [
+    "5.0"
+  ],
+  "pod_target_xcconfig": {
+    "VALID_ARCHS[sdk=iphonesimulator*]": "",
+    "OTHER_LDFLAGS": "-all_load"
+  },
+  "platforms": {
+    "ios": "9.0"
+  },
+  "resource_bundles": {
+    "IPZBasePublic": [
+      "IPZBasePublic/Assets/*.png"
+    ]
+  },
+  "subspecs": [
+    {
+      "name": "Category",
+      "source_files": "IPZBasePublic/Classes/Category/*",
+      "dependencies": {
+        "GPUImage": [
+
+        ],
+        "MJRefresh": [
+
+        ],
+        "Texture": [
+
+        ],
+        "RxSwift": [
+
+        ],
+        "RxCocoa": [
+
+        ]
+      }
+    },
+    {
+      "name": "Controller",
+      "dependencies": {
+        "Texture": [
+
+        ],
+        "Then": [
+
+        ],
+        "QMUIKit": [
+
+        ],
+        "SnapKit": [
+
+        ],
+        "IPZBasePublic/View": [
+
+        ]
+      },
+      "source_files": "IPZBasePublic/Classes/Controller/*"
+    },
+    {
+      "name": "Define",
+      "source_files": "IPZBasePublic/Classes/Define/*",
+      "dependencies": {
+        "QMUIKit": [
+
+        ],
+        "IPZBasePublic/Category": [
+
+        ]
+      }
+    },
+    {
+      "name": "Model",
+      "source_files": "IPZBasePublic/Classes/Model/*",
+      "dependencies": {
+        "ObjectMapper": [
+
+        ],
+        "SwiftyJSON": [
+
+        ]
+      }
+    },
+    {
+      "name": "Util",
+      "source_files": "IPZBasePublic/Classes/Util/*",
+      "dependencies": {
+        "RxSwift": [
+
+        ],
+        "RxCocoa": [
+
+        ],
+        "RxAlamofire": [
+
+        ],
+        "Alamofire": [
+
+        ],
+        "IPZBasePublic/Model": [
+
+        ],
+        "IPZBasePublic/Define": [
+
+        ]
+      }
+    },
+    {
+      "name": "View",
+      "source_files": "IPZBasePublic/Classes/View/*",
+      "dependencies": {
+        "Then": [
+
+        ],
+        "SnapKit": [
+
+        ],
+        "Kingfisher": [
+
+        ],
+        "FLAnimatedImage": [
+
+        ],
+        "QMUIKit": [
+
+        ],
+        "IPZBasePublic/Category": [
+
+        ],
+        "IPZBasePublic/Define": [
+
+        ],
+        "IPZBasePublic/Model": [
+
+        ],
+        "IPZBasePublic/Util": [
+
+        ]
+      }
+    }
+  ],
+  "swift_version": "5.0"
+}
