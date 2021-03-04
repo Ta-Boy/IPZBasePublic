@@ -44,69 +44,73 @@ public class EvaScaledImageDetailView: UIScrollView {
                 guard let _ = self.imageUrl else {
                     return
                 }
+                
+                let loadWebImageBlock: () -> () = {
+                    if self.imageUrl!.hasSuffix(".gif") {
+                        DispatchQueue.main.async { [weak self] in
+                            guard let weakSelf = self else {
+                                return
+                            }
+
+                            weakSelf.circleProgressView.isHidden = false
+                            weakSelf.animateImageView.isHidden = false
+                            weakSelf.contentImageView.isHidden = true
+                        }
+                    } else {
+                        DispatchQueue.main.async { [weak self] in
+                            guard let weakSelf = self else {
+                                return
+                            }
+
+                            weakSelf.circleProgressView.isHidden = false
+                            weakSelf.animateImageView.isHidden = true
+                            weakSelf.contentImageView.isHidden = false
+                        }
+                        
+                        self.contentImageView.kf.setImage(with: URL.init(string: self.imageUrl!), placeholder: nil, options: nil) { (receivedSize, totalSize) in
+                            let progress = CGFloat(receivedSize) * 1.0 / CGFloat(totalSize)
+                            DispatchQueue.main.async { [weak self] in
+                                guard let weakSelf = self else {
+                                    return
+                                }
+
+                                weakSelf.circleProgressView.progress = progress
+                            }
+                        } completionHandler: { [weak self] (result) in
+                            guard let weakSelf = self else {
+                                return
+                            }
+                            
+                            switch result {
+                            case .success(let retriveResult):
+                                weakSelf.circleProgressView.isHidden = true
+                                weakSelf.fitLongPicDisplay(displayImage: retriveResult.image)
+                                weakSelf.contentImageView.image = retriveResult.image
+
+                                // 清理缓存
+                                KingfisherManager.shared.cache.clearMemoryCache()
+                                KingfisherManager.shared.cache.store(retriveResult.image, forKey: weakSelf.imageUrl!, toDisk: true)
+                            case .failure(_):
+                                break
+                            }
+                        }
+                    }
+                }
 
                 // 加载网络图片
-                DispatchQueue.global().async { [weak self] in
-                    guard let weakSelf = self else {
-                        return
-                    }
-
-                    if let diskImage = KingfisherManager.shared.cache.retrieveImageInDiskCache(forKey: weakSelf.imageUrl!, options: [.backgroundDecode]) {
+                KingfisherManager.shared.cache.retrieveImageInDiskCache(forKey: self.imageUrl!) { (result) in
+                    switch result {
+                    case .success(let image):
                         DispatchQueue.main.async { [weak self] in
                             guard let weakSelf = self else {
                                 return
                             }
 
                             weakSelf.circleProgressView.isHidden = true
-                            weakSelf.contentImageView.image = diskImage
+                            weakSelf.contentImageView.image = image
                         }
-                    } else {
-                        if weakSelf.imageUrl!.hasSuffix(".gif") {
-                            DispatchQueue.main.async { [weak self] in
-                                guard let weakSelf = self else {
-                                    return
-                                }
-
-                                weakSelf.circleProgressView.isHidden = false
-                                weakSelf.animateImageView.isHidden = false
-                                weakSelf.contentImageView.isHidden = true
-                            }
-                        } else {
-                            DispatchQueue.main.async { [weak self] in
-                                guard let weakSelf = self else {
-                                    return
-                                }
-
-                                weakSelf.circleProgressView.isHidden = false
-                                weakSelf.animateImageView.isHidden = true
-                                weakSelf.contentImageView.isHidden = false
-                            }
-
-                            weakSelf.contentImageView.kf.setImage(with: URL.init(string: weakSelf.imageUrl!), placeholder: nil, options: nil, progressBlock: { (receivedSize, totalSize) in
-                                let progress = CGFloat(receivedSize) * 1.0 / CGFloat(totalSize)
-                                DispatchQueue.main.async { [weak self] in
-                                    guard let weakSelf = self else {
-                                        return
-                                    }
-
-                                    weakSelf.circleProgressView.progress = progress
-                                }
-                            }, completionHandler: { [weak self] (image, error, cacheType, imageURL) in
-                                guard let weakSelf = self else {
-                                    return
-                                }
-
-                                if (image != nil) {
-                                    weakSelf.circleProgressView.isHidden = true
-                                    weakSelf.fitLongPicDisplay(displayImage: image!)
-                                    weakSelf.contentImageView.image = image
-
-                                    // 清理缓存
-                                    KingfisherManager.shared.cache.clearMemoryCache()
-                                    KingfisherManager.shared.cache.store(image!, forKey: weakSelf.imageUrl!, toDisk: true)
-                                }
-                            })
-                        }
+                    case .failure(_):
+                        loadWebImageBlock()
                     }
                 }
             }
@@ -189,7 +193,7 @@ public class EvaScaledImageDetailView: UIScrollView {
                         print(error)
                     }
                 } else {
-                    KingfisherManager.shared.downloader.downloadImage(with: url, retrieveImageTask: nil, options: nil, progressBlock: { [weak self] (receivedSize, totalSize) in
+                    KingfisherManager.shared.downloader.downloadImage(with: url, options: nil) { (receivedSize, totalSize) in
                         let progress = CGFloat(receivedSize) * 1.0 / CGFloat(totalSize)
                         DispatchQueue.main.async { [weak self] in
                             guard let weakSelf = self else {
@@ -198,20 +202,21 @@ public class EvaScaledImageDetailView: UIScrollView {
 
                             weakSelf.circleProgressView.progress = progress
                         }
-                    }) { [weak self] (image, error, url, data) in
+                    } completionHandler: { [weak self] (result) in
                         guard let weakSelf = self else {
                             return
                         }
 
                         weakSelf.circleProgressView.isHidden = true
-
-                        if let imageData = data {
+                        
+                        switch result {
+                        case .success(let retriveResult):
                             DispatchQueue.main.async { [weak self] in
                                 guard let weakSelf = self else {
                                     return
                                 }
 
-                                if let animateImage = FLAnimatedImage.init(animatedGIFData: imageData, optimalFrameCacheSize: 1, predrawingEnabled: false) {
+                                if let animateImage = FLAnimatedImage.init(animatedGIFData: retriveResult.originalData, optimalFrameCacheSize: 1, predrawingEnabled: false) {
                                     weakSelf.circleProgressView.isHidden = true
                                     weakSelf.animateImageView.animatedImage = animateImage
                                 }
@@ -219,12 +224,14 @@ public class EvaScaledImageDetailView: UIScrollView {
 
                             DispatchQueue.global().async {
                                 do {
-                                    try imageData.write(to: URL.init(fileURLWithPath: filePath), options: Data.WritingOptions.atomicWrite)
+                                    try retriveResult.originalData.write(to: URL.init(fileURLWithPath: filePath), options: Data.WritingOptions.atomicWrite)
                                     KingfisherManager.shared.cache.clearMemoryCache()
                                 } catch {
                                     print(error)
                                 }
                             }
+                        case .failure(_):
+                            break
                         }
                     }
                 }

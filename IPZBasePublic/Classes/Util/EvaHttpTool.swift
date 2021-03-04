@@ -42,8 +42,8 @@ public class EvaHttpTool: NSObject {
     
     public static func get(url: String, params: [String: Any]?) -> Observable<(HTTPURLResponse, Any)> {
         // 设置超时时间
-        let manager = Alamofire.SessionManager.default
-        manager.session.configuration.timeoutIntervalForRequest = 60
+        let session = Alamofire.Session.default
+        session.sessionConfiguration.timeoutIntervalForRequest = 60
 
         // 构建header
         let tokenHeader: HTTPHeaders = [TOKEN_KEY: TOKEN_VALUE]
@@ -58,8 +58,8 @@ public class EvaHttpTool: NSObject {
 
     public static func post(url: String, params: [String: Any]?) -> Observable<(HTTPURLResponse, Any)> {
         // 设置超时时间
-        let manager = Alamofire.SessionManager.default
-        manager.session.configuration.timeoutIntervalForRequest = 60
+        let session = Alamofire.Session.default
+        session.sessionConfiguration.timeoutIntervalForRequest = 60
 
         // 构建header
         let tokenHeader: HTTPHeaders = [TOKEN_KEY: TOKEN_VALUE]
@@ -74,8 +74,8 @@ public class EvaHttpTool: NSObject {
 
     public static func postJson(url: String, params: [String: Any]?) -> Observable<(HTTPURLResponse, Any)> {
         // 设置超时时间
-        let manager = Alamofire.SessionManager.default
-        manager.session.configuration.timeoutIntervalForRequest = 60
+        let session = Alamofire.Session.default
+        session.sessionConfiguration.timeoutIntervalForRequest = 60
 
         // 构建header
         var tokenHeader: HTTPHeaders = [:]

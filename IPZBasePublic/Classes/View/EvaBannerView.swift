@@ -60,13 +60,16 @@ public class EvaBannerImageView: UIImageView {
                     self.image = self.bannerItem?.testImage
                 } else {
                     // 设置图片显示
-                    self.kf.setImage(with: URL.init(string: bannerItem!.bannerImage), placeholder: UIImage.init(named: "banner_placeholder"), options: nil, progressBlock: nil) { (image: UIImage?, error: NSError?, cacheType: CacheType, url: URL?) in
-                        if image != nil {
+                    self.kf.setImage(with: URL.init(string: bannerItem!.bannerImage), placeholder: UIImage.init(named: "banner_placeholder"), options: nil) { (result) in
+                        switch result {
+                        case .success(let retriveResult):
                             //切割图片
-                            let height = GlobalProperties.SCREEN_WIDTH * image!.size.height / image!.size.width
-                            let resultImage = image!.scale(toSize: CGSize.init(width: GlobalProperties.SCREEN_WIDTH, height: height))!
+                            let height = GlobalProperties.SCREEN_WIDTH * retriveResult.image.size.height / retriveResult.image.size.width
+                            let resultImage = retriveResult.image.scale(toSize: CGSize.init(width: GlobalProperties.SCREEN_WIDTH, height: height))!
                             self.image = resultImage
                             KingfisherManager.shared.cache.clearMemoryCache()
+                        case .failure(_):
+                            break
                         }
                     }
                 }
