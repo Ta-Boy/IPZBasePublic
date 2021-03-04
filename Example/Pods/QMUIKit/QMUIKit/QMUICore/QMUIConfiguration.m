@@ -19,7 +19,6 @@
 #import "NSString+QMUI.h"
 #import "UIViewController+QMUI.h"
 #import "QMUIKit.h"
-#import <objc/runtime.h>
 
 // 在 iOS 8 - 11 上实际测量得到
 // Measured on iOS 8 - 11
@@ -27,27 +26,27 @@ const CGSize kUINavigationBarBackIndicatorImageSize = {13, 21};
 
 @interface QMUIConfiguration ()
 
-#ifdef IOS13_SDK_ALLOWED
 @property(nonatomic, strong) UITabBarAppearance *tabBarAppearance API_AVAILABLE(ios(13.0));
-@property(nonatomic, strong) UINavigationBarAppearance *navigationBarAppearance API_AVAILABLE(ios(13.0));
-#endif
 @end
 
 @implementation UIViewController (QMUIConfiguration)
 
-- (NSArray <UIViewController *>*)qmui_existingViewControllersOfClass:(Class)class {
+- (NSArray <UIViewController *>*)qmui_existingViewControllersOfClasses:(NSArray<Class<UIAppearanceContainer>> *)classes {
     NSMutableSet *viewControllers = [NSMutableSet set];
     if (self.presentedViewController) {
-        [viewControllers addObjectsFromArray:[self.presentedViewController qmui_existingViewControllersOfClass:class]];
+        [viewControllers addObjectsFromArray:[self.presentedViewController qmui_existingViewControllersOfClasses:classes]];
     }
     if ([self isKindOfClass:UINavigationController.class]) {
-        [viewControllers addObjectsFromArray:[((UINavigationController *)self).visibleViewController qmui_existingViewControllersOfClass:class]];
+        [viewControllers addObjectsFromArray:[((UINavigationController *)self).visibleViewController qmui_existingViewControllersOfClasses:classes]];
     }
     if ([self isKindOfClass:UITabBarController.class]) {
-        [viewControllers addObjectsFromArray:[((UITabBarController *)self).selectedViewController qmui_existingViewControllersOfClass:class]];
+        [viewControllers addObjectsFromArray:[((UITabBarController *)self).selectedViewController qmui_existingViewControllersOfClasses:classes]];
     }
-    if ([self isKindOfClass:class]) {
-        [viewControllers addObject:self];
+    for (Class class in classes) {
+        if ([self isKindOfClass:class]) {
+            [viewControllers addObject:self];
+            break;
+        }
     }
     return viewControllers.allObjects;
 }
@@ -100,8 +99,8 @@ static BOOL QMUI_hasAppliedInitialTemplate;
                 id<QMUIConfigurationTemplateProtocol> template = [[class alloc] init];
                 if ([template shouldApplyTemplateAutomatically]) {
                     QMUI_hasAppliedInitialTemplate = YES;
-                    [template applyConfigurationTemplate];
                     _active = YES;// 标志配置表已生效
+                    [template applyConfigurationTemplate];
                     // 只应用第一个 shouldApplyTemplateAutomatically 的主题
                     // Only apply the first template returned
                     break;
@@ -236,6 +235,7 @@ static BOOL QMUI_hasAppliedInitialTemplate;
     self.tableViewSectionHeaderContentInset = UIEdgeInsetsMake(4, 15, 4, 15);
     self.tableViewSectionFooterContentInset = UIEdgeInsetsMake(4, 15, 4, 15);
     
+    self.tableViewGroupedSeparatorColor = self.tableViewSeparatorColor;
     self.tableViewGroupedSectionHeaderFont = UIFontMake(12);
     self.tableViewGroupedSectionFooterFont = UIFontMake(12);
     self.tableViewGroupedSectionHeaderTextColor = self.grayDarkenColor;
@@ -247,6 +247,20 @@ static BOOL QMUI_hasAppliedInitialTemplate;
     self.tableViewGroupedSectionHeaderContentInset = UIEdgeInsetsMake(16, 15, 8, 15);
     self.tableViewGroupedSectionFooterContentInset = UIEdgeInsetsMake(8, 15, 2, 15);
     
+    self.tableViewInsetGroupedCornerRadius = 10;
+    self.tableViewInsetGroupedHorizontalInset = PreferredValueForVisualDevice(20, 15);
+    self.tableViewInsetGroupedSeparatorColor = self.tableViewSeparatorColor;
+    self.tableViewInsetGroupedSectionHeaderFont = self.tableViewGroupedSectionHeaderFont;
+    self.tableViewInsetGroupedSectionFooterFont = self.tableViewGroupedSectionFooterFont;
+    self.tableViewInsetGroupedSectionHeaderTextColor = self.tableViewSectionHeaderTextColor;
+    self.tableViewInsetGroupedSectionFooterTextColor = self.tableViewGroupedSectionFooterTextColor;
+    self.tableViewInsetGroupedSectionHeaderAccessoryMargins = self.tableViewGroupedSectionHeaderAccessoryMargins;
+    self.tableViewInsetGroupedSectionFooterAccessoryMargins = self.tableViewGroupedSectionFooterAccessoryMargins;
+    self.tableViewInsetGroupedSectionHeaderDefaultHeight = self.tableViewGroupedSectionHeaderDefaultHeight;
+    self.tableViewInsetGroupedSectionFooterDefaultHeight = self.tableViewGroupedSectionFooterDefaultHeight;
+    self.tableViewInsetGroupedSectionHeaderContentInset = self.tableViewGroupedSectionHeaderContentInset;
+    self.tableViewInsetGroupedSectionFooterContentInset = self.tableViewGroupedSectionFooterContentInset;
+    
     #pragma mark - UIWindowLevel
     self.windowLevelQMUIAlertView = UIWindowLevelAlert - 4.0;
     self.windowLevelQMUIConsole = 1;
@@ -257,13 +271,22 @@ static BOOL QMUI_hasAppliedInitialTemplate;
     self.shouldPrintWarnLog = YES;
     self.shouldPrintQMUIWarnLogToConsole = IS_DEBUG;
     
+    #pragma mark - QMUIBadge
+    self.badgeOffset = QMUIBadgeInvalidateOffset;
+    self.badgeOffsetLandscape = QMUIBadgeInvalidateOffset;
+    self.updatesIndicatorOffset = QMUIBadgeInvalidateOffset;
+    self.updatesIndicatorOffsetLandscape = QMUIBadgeInvalidateOffset;
+    
     #pragma mark - Others
     
     self.supportedOrientationMask = UIInterfaceOrientationMaskAll;
+    self.needsBackBarButtonItemTitle = YES;
     self.preventConcurrentNavigationControllerTransitions = YES;
     self.shouldFixTabBarSafeAreaInsetsBug = YES;
     self.sendAnalyticsToQMUITeam = YES;
 }
+
+#pragma mark - Switch Setter
 
 - (void)setSwitchOnTintColor:(UIColor *)switchOnTintColor {
     _switchOnTintColor = switchOnTintColor;
@@ -274,6 +297,8 @@ static BOOL QMUI_hasAppliedInitialTemplate;
     _switchThumbTintColor = switchThumbTintColor;
     [UISwitch appearance].thumbTintColor = switchThumbTintColor;
 }
+
+#pragma mark - NavigationBar Setter
 
 - (void)setNavBarButtonFont:(UIFont *)navBarButtonFont {
     _navBarButtonFont = navBarButtonFont;
@@ -296,7 +321,7 @@ static BOOL QMUI_hasAppliedInitialTemplate;
 
 - (void)setNavBarBarTintColor:(UIColor *)navBarBarTintColor {
     _navBarBarTintColor = navBarBarTintColor;
-    [UINavigationBar appearance].barTintColor = _navBarBarTintColor;
+    UINavigationBar.qmui_appearanceConfigured.barTintColor = _navBarBarTintColor;
     [self.appearanceUpdatingNavigationControllers enumerateObjectsUsingBlock:^(UINavigationController * _Nonnull navigationController,NSUInteger idx, BOOL * _Nonnull stop) {
         navigationController.navigationBar.barTintColor = _navBarBarTintColor;
     }];
@@ -327,7 +352,7 @@ static BOOL QMUI_hasAppliedInitialTemplate;
         _navBarShadowImage = shadowImage;
     }
     
-    UINavigationBar.appearance.shadowImage = shadowImage;
+    UINavigationBar.qmui_appearanceConfigured.shadowImage = shadowImage;
     [self.appearanceUpdatingNavigationControllers enumerateObjectsUsingBlock:^(UINavigationController * _Nonnull navigationController,NSUInteger idx, BOOL * _Nonnull stop) {
         navigationController.navigationBar.shadowImage = shadowImage;
     }];
@@ -335,7 +360,7 @@ static BOOL QMUI_hasAppliedInitialTemplate;
 
 - (void)setNavBarStyle:(UIBarStyle)navBarStyle {
     _navBarStyle = navBarStyle;
-    [UINavigationBar appearance].barStyle = navBarStyle;
+    UINavigationBar.qmui_appearanceConfigured.barStyle = navBarStyle;
     [self.appearanceUpdatingNavigationControllers enumerateObjectsUsingBlock:^(UINavigationController * _Nonnull navigationController,NSUInteger idx, BOOL * _Nonnull stop) {
         navigationController.navigationBar.barStyle = navBarStyle;
     }];
@@ -343,7 +368,7 @@ static BOOL QMUI_hasAppliedInitialTemplate;
 
 - (void)setNavBarBackgroundImage:(UIImage *)navBarBackgroundImage {
     _navBarBackgroundImage = navBarBackgroundImage;
-    [[UINavigationBar appearance] setBackgroundImage:_navBarBackgroundImage forBarMetrics:UIBarMetricsDefault];
+    [UINavigationBar.qmui_appearanceConfigured setBackgroundImage:_navBarBackgroundImage forBarMetrics:UIBarMetricsDefault];
     [self.appearanceUpdatingNavigationControllers enumerateObjectsUsingBlock:^(UINavigationController * _Nonnull navigationController,NSUInteger idx, BOOL * _Nonnull stop) {
         [navigationController.navigationBar setBackgroundImage:_navBarBackgroundImage forBarMetrics:UIBarMetricsDefault];
     }];
@@ -360,7 +385,7 @@ static BOOL QMUI_hasAppliedInitialTemplate;
 }
 
 - (void)updateNavigationBarTitleAttributesIfNeeded {
-    NSMutableDictionary<NSAttributedStringKey, id> *titleTextAttributes = [UINavigationBar appearance].titleTextAttributes.mutableCopy;
+    NSMutableDictionary<NSAttributedStringKey, id> *titleTextAttributes = UINavigationBar.qmui_appearanceConfigured.titleTextAttributes.mutableCopy;
     if (!titleTextAttributes) {
         titleTextAttributes = [[NSMutableDictionary alloc] init];
     }
@@ -370,7 +395,7 @@ static BOOL QMUI_hasAppliedInitialTemplate;
     if (self.navBarTitleColor) {
         titleTextAttributes[NSForegroundColorAttributeName] = self.navBarTitleColor;
     }
-    [UINavigationBar appearance].titleTextAttributes = titleTextAttributes;
+    UINavigationBar.qmui_appearanceConfigured.titleTextAttributes = titleTextAttributes;
     [self.appearanceUpdatingNavigationControllers enumerateObjectsUsingBlock:^(UINavigationController * _Nonnull navigationController,NSUInteger idx, BOOL * _Nonnull stop) {
         navigationController.navigationBar.titleTextAttributes = titleTextAttributes;
     }];
@@ -395,7 +420,7 @@ static BOOL QMUI_hasAppliedInitialTemplate;
         if (self.navBarLargeTitleColor) {
             largeTitleTextAttributes[NSForegroundColorAttributeName] = self.navBarLargeTitleColor;
         }
-        [UINavigationBar appearance].largeTitleTextAttributes = largeTitleTextAttributes;
+        UINavigationBar.qmui_appearanceConfigured.largeTitleTextAttributes = largeTitleTextAttributes;
         [self.appearanceUpdatingNavigationControllers enumerateObjectsUsingBlock:^(UINavigationController * _Nonnull navigationController,NSUInteger idx, BOOL * _Nonnull stop) {
             navigationController.navigationBar.largeTitleTextAttributes = largeTitleTextAttributes;
         }];
@@ -426,7 +451,7 @@ static BOOL QMUI_hasAppliedInitialTemplate;
         }
     }
     
-    UINavigationBar *navBarAppearance = [UINavigationBar appearance];
+    UINavigationBar *navBarAppearance = UINavigationBar.qmui_appearanceConfigured;
     navBarAppearance.backIndicatorImage = _navBarBackIndicatorImage;
     navBarAppearance.backIndicatorTransitionMaskImage = _navBarBackIndicatorImage;
     
@@ -447,6 +472,8 @@ static BOOL QMUI_hasAppliedInitialTemplate;
     }];
 }
 
+#pragma mark - ToolBar Setter
+
 - (void)setToolBarTintColor:(UIColor *)toolBarTintColor {
     _toolBarTintColor = toolBarTintColor;
     // tintColor 并没有声明 UI_APPEARANCE_SELECTOR，所以暂不使用 appearance 的方式去修改（虽然 appearance 方式实测是生效的）
@@ -457,24 +484,24 @@ static BOOL QMUI_hasAppliedInitialTemplate;
 
 - (void)setToolBarStyle:(UIBarStyle)toolBarStyle {
     _toolBarStyle = toolBarStyle;
-    [UIToolbar appearance].barStyle = toolBarStyle;
-    [self.appearanceUpdatingNavigationControllers enumerateObjectsUsingBlock:^(UINavigationController * _Nonnull navigationController, NSUInteger idx, BOOL * _Nonnull stop) {
+    UIToolbar.qmui_appearanceConfigured.barStyle = toolBarStyle;
+    [self.appearanceUpdatingToolbarControllers enumerateObjectsUsingBlock:^(UINavigationController * _Nonnull navigationController, NSUInteger idx, BOOL * _Nonnull stop) {
         navigationController.toolbar.barStyle = toolBarStyle;
     }];
 }
 
 - (void)setToolBarBarTintColor:(UIColor *)toolBarBarTintColor {
     _toolBarBarTintColor = toolBarBarTintColor;
-    [UIToolbar appearance].barTintColor = _toolBarBarTintColor;
-    [self.appearanceUpdatingNavigationControllers enumerateObjectsUsingBlock:^(UINavigationController * _Nonnull navigationController, NSUInteger idx, BOOL * _Nonnull stop) {
+    UIToolbar.qmui_appearanceConfigured.barTintColor = _toolBarBarTintColor;
+    [self.appearanceUpdatingToolbarControllers enumerateObjectsUsingBlock:^(UINavigationController * _Nonnull navigationController, NSUInteger idx, BOOL * _Nonnull stop) {
         navigationController.toolbar.barTintColor = _toolBarBarTintColor;
     }];
 }
 
 - (void)setToolBarBackgroundImage:(UIImage *)toolBarBackgroundImage {
     _toolBarBackgroundImage = toolBarBackgroundImage;
-    [[UIToolbar appearance] setBackgroundImage:_toolBarBackgroundImage forToolbarPosition:UIBarPositionAny barMetrics:UIBarMetricsDefault];
-    [self.appearanceUpdatingNavigationControllers enumerateObjectsUsingBlock:^(UINavigationController * _Nonnull navigationController, NSUInteger idx, BOOL * _Nonnull stop) {
+    [UIToolbar.qmui_appearanceConfigured setBackgroundImage:_toolBarBackgroundImage forToolbarPosition:UIBarPositionAny barMetrics:UIBarMetricsDefault];
+    [self.appearanceUpdatingToolbarControllers enumerateObjectsUsingBlock:^(UINavigationController * _Nonnull navigationController, NSUInteger idx, BOOL * _Nonnull stop) {
         [navigationController.toolbar setBackgroundImage:_toolBarBackgroundImage forToolbarPosition:UIBarPositionAny barMetrics:UIBarMetricsDefault];
     }];
 }
@@ -482,13 +509,13 @@ static BOOL QMUI_hasAppliedInitialTemplate;
 - (void)setToolBarShadowImageColor:(UIColor *)toolBarShadowImageColor {
     _toolBarShadowImageColor = toolBarShadowImageColor;
     UIImage *shadowImage = toolBarShadowImageColor ? [UIImage qmui_imageWithColor:_toolBarShadowImageColor size:CGSizeMake(1, PixelOne) cornerRadius:0] : nil;
-    [[UIToolbar appearance] setShadowImage:shadowImage forToolbarPosition:UIBarPositionAny];
-    [self.appearanceUpdatingNavigationControllers enumerateObjectsUsingBlock:^(UINavigationController * _Nonnull navigationController, NSUInteger idx, BOOL * _Nonnull stop) {
+    [UIToolbar.qmui_appearanceConfigured setShadowImage:shadowImage forToolbarPosition:UIBarPositionAny];
+    [self.appearanceUpdatingToolbarControllers enumerateObjectsUsingBlock:^(UINavigationController * _Nonnull navigationController, NSUInteger idx, BOOL * _Nonnull stop) {
         [navigationController.toolbar setShadowImage:shadowImage forToolbarPosition:UIBarPositionAny];
     }];
 }
 
-#ifdef IOS13_SDK_ALLOWED
+#pragma mark - TabBar Setter
 
 - (UITabBarAppearance *)tabBarAppearance {
     if (!_tabBarAppearance) {
@@ -500,107 +527,72 @@ static BOOL QMUI_hasAppliedInitialTemplate;
 
 - (void)updateTabBarAppearance {
     if (@available(iOS 13.0, *)) {
-        UITabBar.appearance.standardAppearance = self.tabBarAppearance;
+        UITabBar.qmui_appearanceConfigured.standardAppearance = self.tabBarAppearance;
         [self.appearanceUpdatingTabBarControllers enumerateObjectsUsingBlock:^(UITabBarController * _Nonnull tabBarController, NSUInteger idx, BOOL * _Nonnull stop) {
             tabBarController.tabBar.standardAppearance = self.tabBarAppearance;
         }];
     }
 }
 
-- (UINavigationBarAppearance *)navigationBarAppearance {
-    if (!_navigationBarAppearance) {
-        _navigationBarAppearance = [[UINavigationBarAppearance alloc] init];
-    }
-    return _navigationBarAppearance;
-}
-
-- (void)updateNavigationBarAppearance {
-    if (@available(iOS 13.0, *)) {
-        UINavigationBar.appearance.standardAppearance = self.navigationBarAppearance;
-        [self.appearanceUpdatingNavigationControllers enumerateObjectsUsingBlock:^(UINavigationController * _Nonnull navigationController, NSUInteger idx, BOOL * _Nonnull stop) {
-            navigationController.navigationBar.standardAppearance = self.navigationBarAppearance;
-        }];
-    }
-}
-
-#endif
-
 - (void)setTabBarBarTintColor:(UIColor *)tabBarBarTintColor {
     _tabBarBarTintColor = tabBarBarTintColor;
     
-#ifdef IOS13_SDK_ALLOWED
     if (@available(iOS 13.0, *)) {
         self.tabBarAppearance.backgroundColor = tabBarBarTintColor;
         [self updateTabBarAppearance];
     } else {
-#endif
-        [UITabBar appearance].barTintColor = _tabBarBarTintColor;
+        UITabBar.qmui_appearanceConfigured.barTintColor = _tabBarBarTintColor;
         [self.appearanceUpdatingTabBarControllers enumerateObjectsUsingBlock:^(UITabBarController * _Nonnull tabBarController, NSUInteger idx, BOOL * _Nonnull stop) {
             tabBarController.tabBar.barTintColor = _tabBarBarTintColor;
         }];
-#ifdef IOS13_SDK_ALLOWED
     }
-#endif
 }
 
 - (void)setTabBarStyle:(UIBarStyle)tabBarStyle {
     _tabBarStyle = tabBarStyle;
-#ifdef IOS13_SDK_ALLOWED
     if (@available(iOS 13.0, *)) {
         self.tabBarAppearance.backgroundEffect = [UIBlurEffect effectWithStyle:tabBarStyle == UIBarStyleDefault ? UIBlurEffectStyleSystemChromeMaterialLight : UIBlurEffectStyleSystemChromeMaterialDark];
         [self updateTabBarAppearance];
     } else {
-#endif
-        [UITabBar appearance].barStyle = tabBarStyle;
+        UITabBar.qmui_appearanceConfigured.barStyle = tabBarStyle;
         [self.appearanceUpdatingTabBarControllers enumerateObjectsUsingBlock:^(UITabBarController * _Nonnull tabBarController, NSUInteger idx, BOOL * _Nonnull stop) {
             tabBarController.tabBar.barStyle = tabBarStyle;
         }];
-#ifdef IOS13_SDK_ALLOWED
     }
-#endif
 }
 
 - (void)setTabBarBackgroundImage:(UIImage *)tabBarBackgroundImage {
     _tabBarBackgroundImage = tabBarBackgroundImage;
     
-#ifdef IOS13_SDK_ALLOWED
     if (@available(iOS 13.0, *)) {
         self.tabBarAppearance.backgroundImage = tabBarBackgroundImage;
         [self updateTabBarAppearance];
     } else {
-#endif
-        [UITabBar appearance].backgroundImage = tabBarBackgroundImage;
+        UITabBar.qmui_appearanceConfigured.backgroundImage = tabBarBackgroundImage;
         [self.appearanceUpdatingTabBarControllers enumerateObjectsUsingBlock:^(UITabBarController * _Nonnull tabBarController, NSUInteger idx, BOOL * _Nonnull stop) {
             tabBarController.tabBar.backgroundImage = tabBarBackgroundImage;
         }];
-#ifdef IOS13_SDK_ALLOWED
     }
-#endif
 }
 
 - (void)setTabBarShadowImageColor:(UIColor *)tabBarShadowImageColor {
     _tabBarShadowImageColor = tabBarShadowImageColor;
     
-#ifdef IOS13_SDK_ALLOWED
     if (@available(iOS 13.0, *)) {
         self.tabBarAppearance.shadowColor = tabBarShadowImageColor;
         [self updateTabBarAppearance];
     } else {
-#endif
         UIImage *shadowImage = [UIImage qmui_imageWithColor:_tabBarShadowImageColor size:CGSizeMake(1, PixelOne) cornerRadius:0];
-        [[UITabBar appearance] setShadowImage:shadowImage];
+        [UITabBar.qmui_appearanceConfigured setShadowImage:shadowImage];
         [self.appearanceUpdatingTabBarControllers enumerateObjectsUsingBlock:^(UITabBarController * _Nonnull tabBarController, NSUInteger idx, BOOL * _Nonnull stop) {
             tabBarController.tabBar.shadowImage = shadowImage;
         }];
-#ifdef IOS13_SDK_ALLOWED
     }
-#endif
 }
 
 - (void)setTabBarItemTitleFont:(UIFont *)tabBarItemTitleFont {
     _tabBarItemTitleFont = tabBarItemTitleFont;
     
-#ifdef IOS13_SDK_ALLOWED
     if (@available(iOS 13.0, *)) {
         [self.tabBarAppearance qmui_applyItemAppearanceWithBlock:^(UITabBarItemAppearance * _Nonnull itemAppearance) {
             NSMutableDictionary<NSAttributedStringKey, id> *attributes = itemAppearance.normal.titleTextAttributes.mutableCopy;
@@ -609,26 +601,46 @@ static BOOL QMUI_hasAppliedInitialTemplate;
         }];
         [self updateTabBarAppearance];
     } else {
-#endif
-        NSMutableDictionary<NSString *, id> *textAttributes = [[NSMutableDictionary alloc] initWithDictionary:[[UITabBarItem appearance] titleTextAttributesForState:UIControlStateNormal]];
+        NSMutableDictionary<NSString *, id> *textAttributes = [[NSMutableDictionary alloc] initWithDictionary:[UITabBarItem.qmui_appearanceConfigured titleTextAttributesForState:UIControlStateNormal]];
         if (_tabBarItemTitleFont) {
             textAttributes[NSFontAttributeName] = _tabBarItemTitleFont;
         }
-        [[UITabBarItem appearance] setTitleTextAttributes:textAttributes forState:UIControlStateNormal];
+        [UITabBarItem.qmui_appearanceConfigured setTitleTextAttributes:textAttributes forState:UIControlStateNormal];
         [self.appearanceUpdatingTabBarControllers enumerateObjectsUsingBlock:^(UITabBarController * _Nonnull tabBarController, NSUInteger idx, BOOL * _Nonnull stop) {
             [tabBarController.tabBar.items enumerateObjectsUsingBlock:^(UITabBarItem * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
                 [obj setTitleTextAttributes:textAttributes forState:UIControlStateNormal];
             }];
         }];
-#ifdef IOS13_SDK_ALLOWED
     }
-#endif
+}
+
+- (void)setTabBarItemTitleFontSelected:(UIFont *)tabBarItemTitleFontSelected {
+    _tabBarItemTitleFontSelected = tabBarItemTitleFontSelected;
+    
+    if (@available(iOS 13.0, *)) {
+        [self.tabBarAppearance qmui_applyItemAppearanceWithBlock:^(UITabBarItemAppearance * _Nonnull itemAppearance) {
+            NSMutableDictionary<NSAttributedStringKey, id> *attributes = itemAppearance.selected.titleTextAttributes.mutableCopy;
+            attributes[NSFontAttributeName] = tabBarItemTitleFontSelected;
+            itemAppearance.selected.titleTextAttributes = attributes.copy;
+        }];
+        [self updateTabBarAppearance];
+    } else {
+        NSMutableDictionary<NSString *, id> *textAttributes = [[NSMutableDictionary alloc] initWithDictionary:[UITabBarItem.qmui_appearanceConfigured titleTextAttributesForState:UIControlStateSelected]];
+        if (tabBarItemTitleFontSelected) {
+            textAttributes[NSFontAttributeName] = tabBarItemTitleFontSelected;
+        }
+        [UITabBarItem.qmui_appearanceConfigured setTitleTextAttributes:textAttributes forState:UIControlStateSelected];
+        [self.appearanceUpdatingTabBarControllers enumerateObjectsUsingBlock:^(UITabBarController * _Nonnull tabBarController, NSUInteger idx, BOOL * _Nonnull stop) {
+            [tabBarController.tabBar.items enumerateObjectsUsingBlock:^(UITabBarItem * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+                [obj setTitleTextAttributes:textAttributes forState:UIControlStateSelected];
+            }];
+        }];
+    }
 }
 
 - (void)setTabBarItemTitleColor:(UIColor *)tabBarItemTitleColor {
     _tabBarItemTitleColor = tabBarItemTitleColor;
     
-#ifdef IOS13_SDK_ALLOWED
     if (@available(iOS 13.0, *)) {
         [self.tabBarAppearance qmui_applyItemAppearanceWithBlock:^(UITabBarItemAppearance * _Nonnull itemAppearance) {
             NSMutableDictionary<NSAttributedStringKey, id> *attributes = itemAppearance.normal.titleTextAttributes.mutableCopy;
@@ -637,24 +649,20 @@ static BOOL QMUI_hasAppliedInitialTemplate;
         }];
         [self updateTabBarAppearance];
     } else {
-#endif
-        NSMutableDictionary<NSString *, id> *textAttributes = [[NSMutableDictionary alloc] initWithDictionary:[[UITabBarItem appearance] titleTextAttributesForState:UIControlStateNormal]];
+        NSMutableDictionary<NSString *, id> *textAttributes = [[NSMutableDictionary alloc] initWithDictionary:[UITabBarItem.qmui_appearanceConfigured titleTextAttributesForState:UIControlStateNormal]];
         textAttributes[NSForegroundColorAttributeName] = _tabBarItemTitleColor;
-        [[UITabBarItem appearance] setTitleTextAttributes:textAttributes forState:UIControlStateNormal];
+        [UITabBarItem.qmui_appearanceConfigured setTitleTextAttributes:textAttributes forState:UIControlStateNormal];
         [self.appearanceUpdatingTabBarControllers enumerateObjectsUsingBlock:^(UITabBarController * _Nonnull tabBarController, NSUInteger idx, BOOL * _Nonnull stop) {
             [tabBarController.tabBar.items enumerateObjectsUsingBlock:^(UITabBarItem * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
                 [obj setTitleTextAttributes:textAttributes forState:UIControlStateNormal];
             }];
         }];
-#ifdef IOS13_SDK_ALLOWED
     }
-#endif
 }
 
 - (void)setTabBarItemTitleColorSelected:(UIColor *)tabBarItemTitleColorSelected {
     _tabBarItemTitleColorSelected = tabBarItemTitleColorSelected;
     
-#ifdef IOS13_SDK_ALLOWED
     if (@available(iOS 13.0, *)) {
         [self.tabBarAppearance qmui_applyItemAppearanceWithBlock:^(UITabBarItemAppearance * _Nonnull itemAppearance) {
             NSMutableDictionary<NSAttributedStringKey, id> *attributes = itemAppearance.selected.titleTextAttributes.mutableCopy;
@@ -663,61 +671,48 @@ static BOOL QMUI_hasAppliedInitialTemplate;
         }];
         [self updateTabBarAppearance];
     } else {
-#endif
-        NSMutableDictionary<NSString *, id> *textAttributes = [[NSMutableDictionary alloc] initWithDictionary:[[UITabBarItem appearance] titleTextAttributesForState:UIControlStateSelected]];
+        NSMutableDictionary<NSString *, id> *textAttributes = [[NSMutableDictionary alloc] initWithDictionary:[UITabBarItem.qmui_appearanceConfigured titleTextAttributesForState:UIControlStateSelected]];
         textAttributes[NSForegroundColorAttributeName] = _tabBarItemTitleColorSelected;
-        [[UITabBarItem appearance] setTitleTextAttributes:textAttributes forState:UIControlStateSelected];
+        [UITabBarItem.qmui_appearanceConfigured setTitleTextAttributes:textAttributes forState:UIControlStateSelected];
         [self.appearanceUpdatingTabBarControllers enumerateObjectsUsingBlock:^(UITabBarController * _Nonnull tabBarController, NSUInteger idx, BOOL * _Nonnull stop) {
             [tabBarController.tabBar.items enumerateObjectsUsingBlock:^(UITabBarItem * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
                 [obj setTitleTextAttributes:textAttributes forState:UIControlStateSelected];
             }];
         }];
-#ifdef IOS13_SDK_ALLOWED
     }
-#endif
 }
 
 - (void)setTabBarItemImageColor:(UIColor *)tabBarItemImageColor {
     _tabBarItemImageColor = tabBarItemImageColor;
     
-#ifdef IOS13_SDK_ALLOWED
     if (@available(iOS 13.0, *)) {
         [self.tabBarAppearance qmui_applyItemAppearanceWithBlock:^(UITabBarItemAppearance * _Nonnull itemAppearance) {
             itemAppearance.normal.iconColor = tabBarItemImageColor;
         }];
         [self updateTabBarAppearance];
     } else {
-#endif
-    [self.appearanceUpdatingTabBarControllers enumerateObjectsUsingBlock:^(UITabBarController * _Nonnull tabBarController, NSUInteger idx, BOOL * _Nonnull stop) {
-        [tabBarController.tabBar.items enumerateObjectsUsingBlock:^(UITabBarItem * _Nonnull item, NSUInteger idx, BOOL * _Nonnull stop) {
-            // 不需要过滤，否则选中时的那个 item 未选中时的图片无法被更新
-//            if (item == tabBarController.tabBar.selectedItem) return;
-            [item qmui_updateTintColorForiOS12AndEarlier:tabBarItemImageColor];
+        UITabBar.qmui_appearanceConfigured.unselectedItemTintColor = tabBarItemImageColor;
+        [self.appearanceUpdatingTabBarControllers enumerateObjectsUsingBlock:^(UITabBarController * _Nonnull tabBarController, NSUInteger idx, BOOL * _Nonnull stop) {
+            tabBarController.tabBar.unselectedItemTintColor = tabBarItemImageColor;
         }];
-    }];
-#ifdef IOS13_SDK_ALLOWED
     }
-#endif
 }
 
 - (void)setTabBarItemImageColorSelected:(UIColor *)tabBarItemImageColorSelected {
     _tabBarItemImageColorSelected = tabBarItemImageColorSelected;
     
-#ifdef IOS13_SDK_ALLOWED
     if (@available(iOS 13.0, *)) {
         [self.tabBarAppearance qmui_applyItemAppearanceWithBlock:^(UITabBarItemAppearance * _Nonnull itemAppearance) {
             itemAppearance.selected.iconColor = tabBarItemImageColorSelected;
         }];
         [self updateTabBarAppearance];
     } else {
-#endif
-        // iOS 12 及以下使用 tintColor 实现，tintColor 并没有声明 UI_APPEARANCE_SELECTOR，所以暂不使用 appearance 的方式去修改（虽然 appearance 方式实测是生效的）
+        // iOS 12 及以下使用 tintColor 实现，但 tintColor 并没有声明 UI_APPEARANCE_SELECTOR，所以暂不使用 appearance 的方式去修改（虽然 appearance 方式实测是生效的）
+//        UITabBar.qmui_appearanceConfigured.tintColor = tabBarItemImageColorSelected;
         [self.appearanceUpdatingTabBarControllers enumerateObjectsUsingBlock:^(UITabBarController * _Nonnull tabBarController, NSUInteger idx, BOOL * _Nonnull stop) {
             tabBarController.tabBar.tintColor = tabBarItemImageColorSelected;
         }];
-#ifdef IOS13_SDK_ALLOWED
     }
-#endif
 }
 
 - (void)setStatusbarStyleLightInitially:(BOOL)statusbarStyleLightInitially {
@@ -730,18 +725,53 @@ static BOOL QMUI_hasAppliedInitialTemplate;
 // 解决某些场景下更新配置表无法覆盖样式的问题 https://github.com/Tencent/QMUI_iOS/issues/700
 
 - (NSArray <UITabBarController *>*)appearanceUpdatingTabBarControllers {
-    return (NSArray <UITabBarController *>*)[self appearanceUpdatingViewControllersOfClass:UITabBarController.class];
+    NSArray<Class<UIAppearanceContainer>> *classes = nil;
+    if (self.tabBarContainerClasses.count > 0) {
+        classes = self.tabBarContainerClasses;
+    } else {
+        classes = @[UITabBarController.class];
+    }
+    // tabBarContainerClasses 里可能会设置非 UITabBarController 的 class，由于这里只需要关注 UITabBarController 的，所以做一次过滤
+    classes = [classes qmui_filterWithBlock:^BOOL(Class<UIAppearanceContainer>  _Nonnull item) {
+        return [item.class isSubclassOfClass:UITabBarController.class];
+    }];
+    return (NSArray <UITabBarController *>*)[self appearanceUpdatingViewControllersOfClasses:classes];
 }
 
 - (NSArray <UINavigationController *>*)appearanceUpdatingNavigationControllers {
-    return (NSArray <UINavigationController *>*)[self appearanceUpdatingViewControllersOfClass:UINavigationController.class];
+    NSArray<Class<UIAppearanceContainer>> *classes = nil;
+    if (self.navBarContainerClasses.count > 0) {
+        classes = self.navBarContainerClasses;
+    } else {
+        classes = @[UINavigationController.class];
+    }
+    // navBarContainerClasses 里可能会设置非 UINavigationController 的 class，由于这里只需要关注 UINavigationController 的，所以做一次过滤
+    classes = [classes qmui_filterWithBlock:^BOOL(Class<UIAppearanceContainer>  _Nonnull item) {
+        return [item.class isSubclassOfClass:UINavigationController.class];
+    }];
+    return (NSArray <UINavigationController *>*)[self appearanceUpdatingViewControllersOfClasses:classes];
 }
 
-- (NSArray <UIViewController *>*)appearanceUpdatingViewControllersOfClass:(Class)class {
+- (NSArray <UINavigationController *>*)appearanceUpdatingToolbarControllers {
+    NSArray<Class<UIAppearanceContainer>> *classes = nil;
+    if (self.toolBarContainerClasses.count > 0) {
+        classes = self.toolBarContainerClasses;
+    } else {
+        classes = @[UINavigationController.class];
+    }
+    // toolBarContainerClasses 里可能会设置非 UINavigationController 的 class，由于这里只需要关注 UINavigationController 的，所以做一次过滤
+    classes = [classes qmui_filterWithBlock:^BOOL(Class<UIAppearanceContainer>  _Nonnull item) {
+        return [item.class isSubclassOfClass:UINavigationController.class];
+    }];
+    return (NSArray <UINavigationController *>*)[self appearanceUpdatingViewControllersOfClasses:classes];
+}
+
+- (NSArray <UIViewController *>*)appearanceUpdatingViewControllersOfClasses:(NSArray<Class<UIAppearanceContainer>> *)classes {
+    if (!classes.count) return nil;
     NSMutableArray *viewControllers = [NSMutableArray array];
     [UIApplication.sharedApplication.windows enumerateObjectsUsingBlock:^(__kindof UIWindow * _Nonnull window, NSUInteger idx, BOOL * _Nonnull stop) {
         if (window.rootViewController) {
-            [viewControllers addObjectsFromArray:[window.rootViewController qmui_existingViewControllersOfClass:class]];
+            [viewControllers addObjectsFromArray:[window.rootViewController qmui_existingViewControllersOfClasses:classes]];
         }
     }];
     return viewControllers;
@@ -749,56 +779,46 @@ static BOOL QMUI_hasAppliedInitialTemplate;
 
 @end
 
-const NSInteger QMUIImageOriginalRenderingModeDefault = -1;
+@implementation UINavigationBar (QMUIConfiguration)
 
-@interface UIImage (QMUIConfiguration)
++ (instancetype)qmui_appearanceConfigured {
+    if (QMUICMIActivated && NavBarContainerClasses) {
+        return [self appearanceWhenContainedInInstancesOfClasses:NavBarContainerClasses];
+    }
+    return [self appearance];
+}
 
-@property(nonatomic, assign) UIImageRenderingMode qmui_originalRenderingMode;
-@property(nonatomic, assign) BOOL qimgconf_hasSetOriginalRenderingMode;
+@end
+
+@implementation UITabBar (QMUIConfiguration)
+
++ (instancetype)qmui_appearanceConfigured {
+    if (QMUICMIActivated && TabBarContainerClasses) {
+        return [self appearanceWhenContainedInInstancesOfClasses:TabBarContainerClasses];
+    }
+    return [self appearance];
+}
+
+@end
+
+@implementation UIToolbar (QMUIConfiguration)
+
++ (instancetype)qmui_appearanceConfigured {
+    if (QMUICMIActivated && ToolBarContainerClasses) {
+        return [self appearanceWhenContainedInInstancesOfClasses:ToolBarContainerClasses];
+    }
+    return [self appearance];
+}
+
 @end
 
 @implementation UITabBarItem (QMUIConfiguration)
 
-// iOS 12 及以下的 UITabBarItem.image 有个问题是，如果不强制指定 original，系统总是会以 template 的方式渲染未选中时的图片，并且颜色也是系统默认的灰色，无法改变
-// 为了让未选中时的图片颜色能跟随配置表变化，这里对 renderingMode 为非 Original 的图片会强制转换成配置表的颜色，并将 renderMode 修改为 AlwaysOriginal 以保证图片颜色不会被系统覆盖
-// 相关 issue：
-// https://github.com/Tencent/QMUI_iOS/issues/736
-// https://github.com/Tencent/QMUI_iOS/issues/813
-- (void)qmui_updateTintColorForiOS12AndEarlier:(UIColor *)tintColor {
-    if (@available(iOS 13.0, *)) return;
-    if (!tintColor) return;
-    
-    UIImage *image = self.image;
-    UIImageRenderingMode renderingMode = image.renderingMode;
-    UIImageRenderingMode originalRenderingMode = image.qmui_originalRenderingMode;
-    if (originalRenderingMode == QMUIImageOriginalRenderingModeDefault) {
-        if (renderingMode != UIImageRenderingModeAlwaysOriginal) {
-            image = [[image qmui_imageWithTintColor:TabBarItemImageColor] imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
-            image.qmui_originalRenderingMode = renderingMode;
-            self.image = image;
-        }
-    } else if (originalRenderingMode != UIImageRenderingModeAlwaysOriginal && renderingMode == UIImageRenderingModeAlwaysOriginal) {
-        image = [[image qmui_imageWithTintColor:TabBarItemImageColor] imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
-        image.qmui_originalRenderingMode = originalRenderingMode;
-        self.image = image;
++ (instancetype)qmui_appearanceConfigured {
+    if (QMUICMIActivated && TabBarContainerClasses) {
+        return [self appearanceWhenContainedInInstancesOfClasses:TabBarContainerClasses];
     }
-}
-
-@end
-
-@implementation UIImage (QMUIConfiguration)
-
-QMUISynthesizeBOOLProperty(qimgconf_hasSetOriginalRenderingMode, setQimgconf_hasSetOriginalRenderingMode)
-
-static char kAssociatedObjectKey_originalRenderingMode;
-- (void)setQmui_originalRenderingMode:(UIImageRenderingMode)qmui_originalRenderingMode {
-    self.qimgconf_hasSetOriginalRenderingMode = YES;
-    objc_setAssociatedObject(self, &kAssociatedObjectKey_originalRenderingMode, @(qmui_originalRenderingMode), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-}
-
-- (UIImageRenderingMode)qmui_originalRenderingMode {
-    if (!self.qimgconf_hasSetOriginalRenderingMode) return QMUIImageOriginalRenderingModeDefault;
-    return [((NSNumber *)objc_getAssociatedObject(self, &kAssociatedObjectKey_originalRenderingMode)) integerValue];
+    return [self appearance];
 }
 
 @end

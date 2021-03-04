@@ -15,13 +15,14 @@
 
 #import "QMUIRuntime.h"
 #import "QMUICommonDefines.h"
+#import "QMUIHelper.h"
 #include <mach-o/getsect.h>
 #include <mach-o/dyld.h>
 
 @implementation QMUIPropertyDescriptor
 
 + (instancetype)descriptorWithProperty:(objc_property_t)property {
-    QMUIPropertyDescriptor *descriptor = [[QMUIPropertyDescriptor alloc] init];
+    QMUIPropertyDescriptor *descriptor = [[self alloc] init];
     NSString *propertyName = [NSString stringWithUTF8String:property_getName(property)];
     descriptor.name = propertyName;
     
@@ -202,4 +203,16 @@ int qmui_getProjectClassList(classref_t **classes) {
         getDataSection(getProjectImageHeader(), "__objc_classlist", &count);
     }
     return (int)count;
+}
+
+
+BOOL qmui_exists_dyld_image(const char *target_image_name) {
+    const uint32_t imageCount = _dyld_image_count();
+    for (uint32_t i = 0; i < imageCount; i++) {
+        const char *image_name = _dyld_get_image_name(i);
+        if (strendswith(image_name, target_image_name)) {
+            return true;
+        }
+    }
+    return false;
 }

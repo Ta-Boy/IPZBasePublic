@@ -102,19 +102,17 @@
     [super layoutSubviews];
     
     // 以下代码修复系统的 UITextField 在 iOS 10 下的 bug：https://github.com/Tencent/QMUI_iOS/issues/64
-    if (@available(iOS 10.0, *)) {
-        UIScrollView *scrollView = self.subviews.firstObject;
-        if (![scrollView isKindOfClass:[UIScrollView class]]) {
-            return;
-        }
-        
-        // 默认 delegate 是为 nil 的，所以我们才利用 delegate 修复这 个 bug，如果哪一天 delegate 不为 nil，就先不处理了。
-        if (scrollView.delegate) {
-            return;
-        }
-        
-        scrollView.delegate = self.delegator;
+    UIScrollView *scrollView = self.subviews.firstObject;
+    if (![scrollView isKindOfClass:[UIScrollView class]]) {
+        return;
     }
+    
+    // 默认 delegate 是为 nil 的，所以我们才利用 delegate 修复这 个 bug，如果哪一天 delegate 不为 nil，就先不处理了。
+    if (scrollView.delegate) {
+        return;
+    }
+    
+    scrollView.delegate = self.delegator;
 }
 
 - (void)setText:(NSString *)text {
@@ -176,14 +174,17 @@
             return YES;
         }
         
-        BOOL isDeleting = range.length > 0 && string.length <= 0;
-        if (isDeleting) {
-            if (NSMaxRange(range) > textField.text.length) {
-                // https://github.com/Tencent/QMUI_iOS/issues/377
-                return NO;
-            } else {
-                return YES;
+        if (NSMaxRange(range) > textField.text.length) {
+            // 如果 range 越界了，继续返回 YES 会造成 rash
+            // https://github.com/Tencent/QMUI_iOS/issues/377
+            // https://github.com/Tencent/QMUI_iOS/issues/1170
+            // 这里的做法是本次返回 NO，并将越界的 range 缩减到没有越界的范围，再手动做该范围的替换。
+            range = NSMakeRange(range.location, range.length - (NSMaxRange(range) - textField.text.length));
+            if (range.length > 0) {
+                UITextRange *textRange = [self.textField qmui_convertUITextRangeFromNSRange:range];
+                [self.textField replaceRange:textRange withText:string];
             }
+            return NO;
         }
         
         NSUInteger rangeLength = textField.shouldCountingNonASCIICharacterAsTwo ? [textField.text substringWithRange:range].qmui_lengthWhenCountingNonASCIICharacterAsTwo : range.length;
@@ -214,6 +215,12 @@
 - (void)handleTextChangeEvent:(QMUITextField *)textField {
     // 1、iOS 10 以下的版本，从中文输入法的候选词里选词输入，是不会走到 textField:shouldChangeCharactersInRange:replacementString: 的，所以要在这里截断文字
     // 2、如果是中文输入法正在输入拼音的过程中（markedTextRange 不为 nil），是不应该限制字数的（例如输入“huang”这5个字符，其实只是为了输入“黄”这一个字符），所以在 shouldChange 那边不会限制，而是放在 didChange 这里限制。
+    
+    // 系统的三指撤销在文本框达到最大字符长度限制时可能引发 crash
+    // https://github.com/Tencent/QMUI_iOS/issues/1168
+    if (textField.maximumTextLength < NSUIntegerMax && textField.undoManager.undoing) {
+        return;
+    }
     
     if (!textField.markedTextRange) {
         if ([textField lengthWithString:textField.text] > textField.maximumTextLength) {

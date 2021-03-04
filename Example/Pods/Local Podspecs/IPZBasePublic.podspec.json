@@ -1,6 +1,6 @@
 {
   "name": "IPZBasePublic",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "summary": "伊品众通用组件库",
   "description": "TODO: Add long description of the pod here.",
   "homepage": "https://github.com/Ta-Boy/IPZBasePublic",
@@ -13,7 +13,7 @@
   },
   "source": {
     "git": "https://github.com/Ta-Boy/IPZBasePublic.git",
-    "tag": "0.1.0"
+    "tag": "0.2.0"
   },
   "swift_versions": [
     "5.0"
@@ -23,7 +23,7 @@
     "OTHER_LDFLAGS": "-all_load"
   },
   "platforms": {
-    "ios": "9.0"
+    "ios": "10.0"
   },
   "resource_bundles": {
     "IPZBasePublic": [
