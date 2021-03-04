@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'IPZBasePublic'
-  s.version          = '0.1.0'
+  s.version          = '0.2.0'
   s.summary          = '伊品众通用组件库'
 
 # This description is used to generate tags and improve search results.
@@ -33,7 +33,7 @@ TODO: Add long description of the pod here.
       'OTHER_LDFLAGS' => '-all_load'
   }
   
-  s.ios.deployment_target = '9.0'
+  s.ios.deployment_target = '10.0'
   
   s.subspec 'Category' do |ss|
       ss.source_files = 'IPZBasePublic/Classes/Category/*'
