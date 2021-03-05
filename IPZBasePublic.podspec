@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'IPZBasePublic'
-  s.version          = '0.3.0'
+  s.version          = '0.4.0'
   s.summary          = '伊品众通用组件库'
 
 # This description is used to generate tags and improve search results.

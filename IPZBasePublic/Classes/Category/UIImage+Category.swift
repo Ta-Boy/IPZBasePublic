@@ -417,9 +417,9 @@ extension UIImage {
     
     // 获取IPZBase.bundle下的图片
     public static func ipzbase_image(named: String) -> UIImage? {
-        if let tempClass = NSClassFromString("IPZBase.EvaBaseViewController") {
+        if let tempClass = NSClassFromString("IPZBasePublic.EvaBaseViewController") {
             let frameworkBundle = Bundle(for: tempClass)
-            if let bundleURL = frameworkBundle.resourceURL?.appendingPathComponent("IPZBase.bundle") {
+            if let bundleURL = frameworkBundle.resourceURL?.appendingPathComponent("IPZBasePublic.bundle") {
                 let resourceBundle = Bundle(url: bundleURL)
                 return UIImage(named: "\(named)@\(Int(UIScreen.main.scale))x.png", in: resourceBundle, compatibleWith: nil)
             } else {
