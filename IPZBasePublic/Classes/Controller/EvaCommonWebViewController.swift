@@ -15,8 +15,8 @@ public class EvaCommonWebViewController: EvaBaseViewController {
 
 //MARK: - 属性
 
-    var requestUrl: String?
-    var displayTitle: String?
+    public var requestUrl: String?
+    public var displayTitle: String?
 
     public override func viewDidLoad() {
         super.viewDidLoad()
