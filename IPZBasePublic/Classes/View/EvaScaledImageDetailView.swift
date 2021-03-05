@@ -117,7 +117,7 @@ public class EvaScaledImageDetailView: UIScrollView {
         }
     }
 
-    override init(frame: CGRect) {
+    public override init(frame: CGRect) {
         super.init(frame: frame)
 
         self.backgroundColor = UIColor.black
@@ -154,7 +154,7 @@ public class EvaScaledImageDetailView: UIScrollView {
 
 //MARK: - 适配长图显示
 
-    func fitLongPicDisplay(displayImage: UIImage) {
+    public func fitLongPicDisplay(displayImage: UIImage) {
         let width = GlobalProperties.SCREEN_WIDTH;
         let height = width * displayImage.size.height / displayImage.size.width;
 
@@ -168,7 +168,7 @@ public class EvaScaledImageDetailView: UIScrollView {
 
 //MARK: - 加载Gif
 
-    func loadDisplayGif() {
+    public func loadDisplayGif() {
         if let url = URL.init(string: self.imageUrl!) {
             DispatchQueue.global().async { [weak self] in
                 guard let weakSelf = self else {

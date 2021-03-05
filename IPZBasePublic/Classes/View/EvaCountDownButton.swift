@@ -38,7 +38,7 @@ public class EvaCountDownButton: UIButton {
         self.setTitleColor(countingColor, for: UIControl.State.disabled)
     }
     
-    override init(frame: CGRect) {
+    public override init(frame: CGRect) {
         super.init(frame: frame)
     }
     
