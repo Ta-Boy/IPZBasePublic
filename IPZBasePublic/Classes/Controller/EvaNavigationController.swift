@@ -54,6 +54,10 @@ public class EvaNavigationController: UINavigationController {
     public override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         if let _ = self.interactivePopGestureRecognizer, let _ = self.visibleViewController {
             if gestureRecognizer == self.interactivePopGestureRecognizer! {
+                // 开始滑动返回,取消当前页面的编辑状态
+                // FIXME: - 这里会报警 `[AXRuntimeCommon] AX Lookup problem - errorCode:1100 error:Permission denied portName:'com.apple.iphone.axserver' PID:8361`; 可以使用 topVC 调用方法改写(推测同样会报错)
+                self.view.endEditing(true)
+
                 if self.viewControllers.count < 2 || self.visibleViewController! == self.viewControllers[0] {
                     return false
                 }

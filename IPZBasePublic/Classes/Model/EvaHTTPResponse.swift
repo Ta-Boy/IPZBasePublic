@@ -11,8 +11,8 @@ import SwiftyJSON
 import ObjectMapper
 
 public class EvaHTTPResponse: NSObject, Mappable {
-
-    public var data: Any?;
+    
+    public var data: Any?
     public var code: Int = 0
     public var message: String?
     public var errorMessage: String {
@@ -26,7 +26,7 @@ public class EvaHTTPResponse: NSObject, Mappable {
 
         let json = JSON.init(jsonData)
         code = json["code"].intValue
-        message = json["message"].string
+        message = json["msg"].string
         data = json["data"]
     }
 
@@ -40,7 +40,7 @@ public class EvaHTTPResponse: NSObject, Mappable {
 
     public func mapping(map: Map) {
         code <- map["code"]
-        message <- map["message"]
+        message <- map["msg"]
         data <- map["data"]
     }
 }

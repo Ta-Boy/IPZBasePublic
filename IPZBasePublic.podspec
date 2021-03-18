@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'IPZBasePublic'
-  s.version          = '0.5.0'
+  s.version          = '0.6.0'
   s.summary          = '伊品众通用组件库'
 
 # This description is used to generate tags and improve search results.
@@ -29,7 +29,7 @@ TODO: Add long description of the pod here.
   s.swift_versions   = ['5.0']
 
   s.pod_target_xcconfig = {
-      'VALID_ARCHS[sdk=iphonesimulator*]' => '',
+      'VALID_ARCHS' => 'x86_64 armv7 arm64',
       'OTHER_LDFLAGS' => '-all_load'
   }
   
