@@ -29,6 +29,7 @@ TODO: Add long description of the pod here.
   s.swift_versions   = ['5.0']
 
   s.pod_target_xcconfig = {
+      'VALID_ARCHS[sdk=iphonesimulator*]' => '',
       'OTHER_LDFLAGS' => '-all_load'
   }
   
