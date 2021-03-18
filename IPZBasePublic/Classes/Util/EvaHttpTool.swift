@@ -27,6 +27,9 @@ public class EvaHttpTool: NSObject {
     private static var BASE_URL = ""
     private static var TOKEN_KEY = ""
     private static var TOKEN_VALUE = ""
+    private static let SIGN_KEY = "API-SIGN"
+    private static let TIME_STAMP_KEY = "API-TIMESTAMP"
+    private static let DEVICE_KEY = "API-DEVICE"
     
 //MARK: - 初始化
     
@@ -40,13 +43,24 @@ public class EvaHttpTool: NSObject {
         TOKEN_VALUE = ""
     }
     
+    static func getSign(device: String, timeStamp: UInt64) -> String {
+        let salt = "ipzoe*2020"
+        return EvaUtil.md5(string: "\(timeStamp)\(device)\(salt)" as NSString) as String
+    }
+    
     public static func get(url: String, params: [String: Any]?) -> Observable<(HTTPURLResponse, Any)> {
         // 设置超时时间
         let session = Alamofire.Session.default
         session.sessionConfiguration.timeoutIntervalForRequest = 60
 
         // 构建header
-        let tokenHeader: HTTPHeaders = [TOKEN_KEY: TOKEN_VALUE]
+        let timeStamp = EvaUtil.getCurrentTimeStamp()
+        let device = "IOS"
+        
+        var tokenHeader: HTTPHeaders = [TOKEN_KEY: TOKEN_VALUE]
+        tokenHeader[SIGN_KEY] = getSign(device: device, timeStamp: timeStamp)
+        tokenHeader[TIME_STAMP_KEY] = "\(timeStamp)"
+        tokenHeader[DEVICE_KEY] = device
         
         // 打印请求参数
         debugPrint("request url: \(BASE_URL)\(url)")
@@ -62,8 +76,14 @@ public class EvaHttpTool: NSObject {
         session.sessionConfiguration.timeoutIntervalForRequest = 60
 
         // 构建header
-        let tokenHeader: HTTPHeaders = [TOKEN_KEY: TOKEN_VALUE]
-
+        let timeStamp = EvaUtil.getCurrentTimeStamp()
+        let device = "IOS"
+        
+        var tokenHeader: HTTPHeaders = [TOKEN_KEY: TOKEN_VALUE]
+        tokenHeader[SIGN_KEY] = getSign(device: device, timeStamp: timeStamp)
+        tokenHeader[TIME_STAMP_KEY] = "\(timeStamp)"
+        tokenHeader[DEVICE_KEY] = device
+        
         // 打印请求参数
         debugPrint("request url: \(BASE_URL)\(url)")
         debugPrint("request param: \(String(describing: params))")
@@ -78,9 +98,15 @@ public class EvaHttpTool: NSObject {
         session.sessionConfiguration.timeoutIntervalForRequest = 60
 
         // 构建header
+        let timeStamp = EvaUtil.getCurrentTimeStamp()
+        let device = "IOS"
+
         var tokenHeader: HTTPHeaders = [:]
         tokenHeader["Content-Type"] = "application/json"
         tokenHeader[TOKEN_KEY] = TOKEN_VALUE
+        tokenHeader[SIGN_KEY] = getSign(device: device, timeStamp: timeStamp)
+        tokenHeader[TIME_STAMP_KEY] = "\(timeStamp)"
+        tokenHeader[DEVICE_KEY] = device
 
         // 打印请求参数
         debugPrint("request url: \(BASE_URL)\(url)")
@@ -96,8 +122,13 @@ public class EvaHttpTool: NSObject {
         session.sessionConfiguration.timeoutIntervalForRequest = 60
 
         // 构建header
-        var tokenHeader: HTTPHeaders = [:]
-        tokenHeader[TOKEN_KEY] = TOKEN_VALUE
+        let timeStamp = EvaUtil.getCurrentTimeStamp()
+        let device = "IOS"
+        
+        var tokenHeader: HTTPHeaders = [TOKEN_KEY: TOKEN_VALUE]
+        tokenHeader[SIGN_KEY] = getSign(device: device, timeStamp: timeStamp)
+        tokenHeader[TIME_STAMP_KEY] = "\(timeStamp)"
+        tokenHeader[DEVICE_KEY] = device
 
         // 打印请求参数
         debugPrint("request url: \(BASE_URL)\(url)")
@@ -113,9 +144,15 @@ public class EvaHttpTool: NSObject {
         session.sessionConfiguration.timeoutIntervalForRequest = 60
 
         // 构建header
+        let timeStamp = EvaUtil.getCurrentTimeStamp()
+        let device = "IOS"
+
         var tokenHeader: HTTPHeaders = [:]
         tokenHeader["Content-Type"] = "application/json"
         tokenHeader[TOKEN_KEY] = TOKEN_VALUE
+        tokenHeader[SIGN_KEY] = getSign(device: device, timeStamp: timeStamp)
+        tokenHeader[TIME_STAMP_KEY] = "\(timeStamp)"
+        tokenHeader[DEVICE_KEY] = device
 
         // 打印请求参数
         debugPrint("request url: \(BASE_URL)\(url)")
@@ -131,8 +168,13 @@ public class EvaHttpTool: NSObject {
         session.sessionConfiguration.timeoutIntervalForRequest = 60
 
         // 构建header
-        var tokenHeader: HTTPHeaders = [:]
-        tokenHeader[TOKEN_KEY] = TOKEN_VALUE
+        let timeStamp = EvaUtil.getCurrentTimeStamp()
+        let device = "IOS"
+        
+        var tokenHeader: HTTPHeaders = [TOKEN_KEY: TOKEN_VALUE]
+        tokenHeader[SIGN_KEY] = getSign(device: device, timeStamp: timeStamp)
+        tokenHeader[TIME_STAMP_KEY] = "\(timeStamp)"
+        tokenHeader[DEVICE_KEY] = device
 
         // 打印请求参数
         debugPrint("request url: \(BASE_URL)\(url)")
@@ -148,9 +190,15 @@ public class EvaHttpTool: NSObject {
         session.sessionConfiguration.timeoutIntervalForRequest = 60
 
         // 构建header
+        let timeStamp = EvaUtil.getCurrentTimeStamp()
+        let device = "IOS"
+
         var tokenHeader: HTTPHeaders = [:]
         tokenHeader["Content-Type"] = "application/json"
         tokenHeader[TOKEN_KEY] = TOKEN_VALUE
+        tokenHeader[SIGN_KEY] = getSign(device: device, timeStamp: timeStamp)
+        tokenHeader[TIME_STAMP_KEY] = "\(timeStamp)"
+        tokenHeader[DEVICE_KEY] = device
 
         // 打印请求参数
         debugPrint("request url: \(BASE_URL)\(url)")
@@ -166,9 +214,15 @@ public class EvaHttpTool: NSObject {
         session.sessionConfiguration.timeoutIntervalForRequest = 60
 
         // 构建header
+        let timeStamp = EvaUtil.getCurrentTimeStamp()
+        let device = "IOS"
+        
         var tokenHeader: HTTPHeaders = [:]
         tokenHeader["Content-Type"] = "multipart/form-data"
         tokenHeader[TOKEN_KEY] = TOKEN_VALUE
+        tokenHeader[SIGN_KEY] = getSign(device: device, timeStamp: timeStamp)
+        tokenHeader[TIME_STAMP_KEY] = "\(timeStamp)"
+        tokenHeader[DEVICE_KEY] = device
 
         // 打印请求参数
         debugPrint("request url: \(BASE_URL)\(url)")
