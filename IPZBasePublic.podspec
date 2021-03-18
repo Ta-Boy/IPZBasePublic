@@ -29,7 +29,6 @@ TODO: Add long description of the pod here.
   s.swift_versions   = ['5.0']
 
   s.pod_target_xcconfig = {
-      'VALID_ARCHS' => 'x86_64 armv7 arm64',
       'OTHER_LDFLAGS' => '-all_load'
   }
   
