@@ -7,7 +7,7 @@ import Foundation
 import SnapKit
 import QMUIKit
 
-protocol EvaGrowingTextViewDelegate: UITextViewDelegate {
+public protocol EvaGrowingTextViewDelegate: UITextViewDelegate {
     func updateConstraints(newHeight: CGFloat)
 }
 
@@ -68,7 +68,7 @@ public class EvaGrowingTextView: UITextView {
         }
     }
     
-    weak var selfDelegate: EvaGrowingTextViewDelegate?
+    public weak var selfDelegate: EvaGrowingTextViewDelegate?
 
     var currentHeight: CGFloat = 0.0
     var textViewWidth: CGFloat = 0.0
