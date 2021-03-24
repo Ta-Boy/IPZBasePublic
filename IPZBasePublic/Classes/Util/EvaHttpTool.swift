@@ -69,6 +69,28 @@ public class EvaHttpTool: NSObject {
         // 执行请求
         return requestJSON(.get, URL.init(string: "\(BASE_URL)\(url)")!, parameters: params, encoding: URLEncoding.default, headers: tokenHeader)
     }
+    
+    public static func delete(url: String, params: [String: Any]?) -> Observable<(HTTPURLResponse, Any)> {
+        // 设置超时时间
+        let session = Alamofire.Session.default
+        session.sessionConfiguration.timeoutIntervalForRequest = 60
+
+        // 构建header
+        let timeStamp = EvaUtil.getCurrentTimeStamp()
+        let device = "IOS"
+        
+        var tokenHeader: HTTPHeaders = [TOKEN_KEY: TOKEN_VALUE]
+        tokenHeader[SIGN_KEY] = getSign(device: device, timeStamp: timeStamp)
+        tokenHeader[TIME_STAMP_KEY] = "\(timeStamp)"
+        tokenHeader[DEVICE_KEY] = device
+        
+        // 打印请求参数
+        debugPrint("request url: \(BASE_URL)\(url)")
+        debugPrint("request param: \(String(describing: params))")
+
+        // 执行请求
+        return requestJSON(.delete, URL.init(string: "\(BASE_URL)\(url)")!, parameters: params, encoding: URLEncoding.default, headers: tokenHeader)
+    }
 
     public static func post(url: String, params: [String: Any]?) -> Observable<(HTTPURLResponse, Any)> {
         // 设置超时时间
